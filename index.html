@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang='en'>
+  <head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    
+    <title>GraphCMS Visibility Toggle UIX</title>
+
+    <style>
+      body {
+        margin: 0px;
+      }
+
+      /* The toggle - the box around the slider */
+      .toggle {        
+        display: none; /* start hidden, unhide when not in table view */
+        position: relative;
+        width: 60px;
+        height: 34px;
+        margin-top: 5px;
+      }      
+      /* Hide default HTML checkbox */
+      .toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      /* The slider */
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border-radius: 30px;
+        background-color: #ccc;
+        -webkit-transition: .4s;
+        transition: .4s;
+      }
+
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        border-radius: 50%;
+        background-color: white;
+        -webkit-transition: .4s;
+        transition: .4s;
+      }
+
+      input:checked + .slider {
+        background-color: #6663FD;
+      }
+
+      input:focus + .slider {
+        box-shadow: 0 0 1px #6663FD;
+      }
+
+      input:checked + .slider:before {
+        -webkit-transform: translateX(26px);
+        -ms-transform: translateX(26px);
+        transform: translateX(26px);
+      }
+    </style>
+
+    <script src='https://cdn.jsdelivr.net/npm/@graphcms/zoid@9.0.64-alpha.1/lib/zoid.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/@graphcms/uix-sdk@0.2.0-alpha.0/dist/gcuix.umd.production.min.js'></script>
+    <script>
+      ((props) => {
+
+        const declaration = {
+          fieldConfig: {
+            FIELDS_TO_TOGGLE: {
+              type: 'string',
+              displayName: 'Fields to show/hide',
+              description: 'Provide a comma separated list of apiIds for fields that need to be toggled',
+              required: false,
+            }
+          },
+          extensionType: 'field',
+          fieldType: 'BOOLEAN',
+          name: 'Field Visibility Toggle',
+          description: 'Show and hide fields in the content form based on a toggle',
+          features: ['FieldRenderer', 'TableRenderer'],
+        };
+
+        async function init() {
+
+          try {
+            window.GCUIX.init({
+              declaration,
+              onProps: function(newProps) {
+                props = newProps;
+                if (props.value === null) {
+                  //Handle "Clear" button
+                  setToggleState(false);
+                  handleToggle();
+                } 
+              }
+            }).then(async (initialState) => {
+              props = initialState.props;              
+              if (initialState.status === 'ok') {
+                if (props.isTableCell) {
+                  //Don't render anything when in table view
+                  return;
+                }
+                doPrep();                
+              }
+            });
+          } catch(error) {
+            console.error('Failed to init extension:', error.message);
+            console.error('- error code:', error.code);
+          }
+        }
+
+        function parseFieldNames() {
+          if (!props || !props.fieldConfig.FIELDS_TO_TOGGLE) return [];
+          try {
+            return props.fieldConfig.FIELDS_TO_TOGGLE.replace(/\s+/g, '').split(',');
+          } catch (error) {
+            console.error('Failed to parse fields', error.message);
+            return [];
+          }
+        }
+
+        function getToggleState() {
+          const checkbox = document.getElementById('checkbox');
+          return checkbox.checked;
+        }
+
+        function setToggleState(state) {
+          const checkbox = document.getElementById('checkbox');
+          checkbox.checked = state;
+        }
+
+        function setVisibility(isVisible) {
+          const fields = parseFieldNames();
+          const visibilityMap = {};
+          for (let i = 0; i < fields.length; i++) {            
+            if (isVisible) visibilityMap[fields[i]] = "READ_WRITE";
+            else visibilityMap[fields[i]] = "HIDDEN";
+          }       
+          props.setFieldsVisibility(visibilityMap);   
+        }
+
+        function handleToggle() {
+          const isVisible = getToggleState();
+          setVisibility(isVisible);
+          props.onChange(isVisible);
+        }
+
+        function doPrep() {
+          //Prep checkbox
+          if (props && props.value) setToggleState(props.value);
+
+          //Show toggle and add event listener
+          const toggle = document.getElementById('toggle');
+          toggle.style.display = 'inline-block';
+          toggle.addEventListener('click', () => handleToggle())
+
+          //Set field visibility according to toggle state
+          setVisibility(getToggleState());
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+        
+      })();
+      
+    </script>
+  </head>
+  <body>
+    <label class="toggle" id="toggle">
+      <input type="checkbox" id="checkbox">
+      <span class="slider"></span>
+    </label>  
+  </body>
+</html>
