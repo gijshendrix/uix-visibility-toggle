@@ -11,10 +11,12 @@ With this example UI Extention, you can add a toggle field to a GraphCMS model t
 The code for this example can be downloaded with the following command:
 
 ```bash
-npx degit graphcms/graphcms-examples/uix-bynder-input uix-bynder-input
+npx degit gijshendrix/uix-visibility-toggle uix-visibility-toggle
 ```
 
 Deploy the code to Vercel, Netlify, GitHub Pages, or run locally. Next, install on GraphCMS as a UI extension using the URL to your index page as the URL for your extension.
+
+For testing purposes, you can also use the Github Pages url for this repository: `https://gijshendrix.github.io/uix-visibility-toggle/`
 
 ### Add field to model and configure
 
